@@ -3,6 +3,7 @@ const cors = require('cors');
 const consign = require('consign');
 const winston = require('winston');
 const { uuidv4 } = require('uuid');
+const DiscordTransport = require('winston-discord-webhook');
 
 app.use(cors());
 
@@ -11,6 +12,12 @@ app.env = process.env.NODE_ENV || 'production';
 app.address = {
   host: process.env.HOST || '0.0.0.0',
   port: process.env.PORT || 3001,
+};
+
+const webhookUrls = {
+  test: 'https://discord.com/api/webhooks/1204584965715787846/HdKedRXuzhslWB74aIGkQHBxbbTiJq7OH8wgsbQVpqjdXW4l7-nZ4hafGPZcKhpz4J2d',
+  development: 'https://discord.com/api/webhooks/1204586195913277511/Gba9znB4Oz3HAAzePktorU9rKpqulkWCdXc09PFaRG_JKFAxfyXWbpAx5tCXJEdYVbbB',
+  // Adicione outros ambientes conforme necessário
 };
 
 app.logger = winston.createLogger({
@@ -26,6 +33,20 @@ app.logger = winston.createLogger({
         winston.format.timestamp(),
         winston.format.json({ space: 1 }),
       ),
+    }),
+    new DiscordTransport({
+      level: 'error',
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json({ space: 1 }),
+      ),
+      webhook: webhookUrls[app.env],
+      mode: 'hybrid',
+      colors: new Map([
+        ['info', '#32a852'],
+        ['warn', '#f2aa4b'],
+        ['error', '#fa1f14'],
+      ]),
     }),
   ],
 });
