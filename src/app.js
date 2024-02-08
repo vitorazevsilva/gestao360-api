@@ -17,6 +17,7 @@ app.address = {
 const webhookUrls = {
   test: 'https://discord.com/api/webhooks/1204584965715787846/HdKedRXuzhslWB74aIGkQHBxbbTiJq7OH8wgsbQVpqjdXW4l7-nZ4hafGPZcKhpz4J2d',
   development: 'https://discord.com/api/webhooks/1204586195913277511/Gba9znB4Oz3HAAzePktorU9rKpqulkWCdXc09PFaRG_JKFAxfyXWbpAx5tCXJEdYVbbB',
+  staging: 'https://discord.com/api/webhooks/1205526293504991282/bmHh2Ukpq48RduSKZJd2gYT2Tq9Gft6Mq6brtzbyoDT69_9PyggsY3wMeM2ySLZI3umq',
 
 };
 
@@ -53,6 +54,8 @@ app.logger = winston.createLogger({
 
 consign({ cwd: 'src', verbose: false })
   .include('./config/middlewares.js')
+  .include('./services')
+  .include('./routes')
   .include('./config/router.js')
   .into(app);
 
@@ -79,10 +82,10 @@ app.get('/', (req, res) => {
 });
 
 app.use(({
-  name, message, inputs, stack,
+  name, message, keys, stack,
 }, req, res, next) => {
   try {
-    if (name === 'validationError') res.status(400).json({ messageError: message, inputsError: inputs });
+    if (name === 'validationError') res.status(400).json({ messageError: message, keys });
     else {
       const id = uuidv4();
       app.logger.error(`${id}:${name}\n${message}\n${stack}`);
