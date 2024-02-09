@@ -51,6 +51,7 @@
   "license": "MIT",
   "private": true,
   "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
     "eslint": "^7.32.0 || ^8.2.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.25.2",
@@ -66,6 +67,7 @@
     "knex": "^3.1.0",
     "pg": "^8.11.3",
     "uuid": "^9.0.1",
+    "validator": "^13.11.0",
     "winston": "^3.11.0",
     "winston-discord-webhook": "^2.0.0"
   }

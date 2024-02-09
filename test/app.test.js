@@ -1,6 +1,6 @@
 const request = require('supertest');
 
-const app = require('../app/app');
+const app = require('../src/app');
 
 test('[APP][GET][1] - App to resolve at the root', () => request(app)
   .get('/')

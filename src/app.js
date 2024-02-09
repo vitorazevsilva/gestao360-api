@@ -4,6 +4,16 @@ const consign = require('consign');
 const winston = require('winston');
 const { uuidv4 } = require('uuid');
 const DiscordTransport = require('winston-discord-webhook');
+const knex = require('knex');
+
+const knexFile = require('../knexfile');
+
+const webhookUrls = {
+  test: 'https://discord.com/api/webhooks/1204584965715787846/HdKedRXuzhslWB74aIGkQHBxbbTiJq7OH8wgsbQVpqjdXW4l7-nZ4hafGPZcKhpz4J2d',
+  development: 'https://discord.com/api/webhooks/1204586195913277511/Gba9znB4Oz3HAAzePktorU9rKpqulkWCdXc09PFaRG_JKFAxfyXWbpAx5tCXJEdYVbbB',
+  stage: 'https://discord.com/api/webhooks/1205526293504991282/bmHh2Ukpq48RduSKZJd2gYT2Tq9Gft6Mq6brtzbyoDT69_9PyggsY3wMeM2ySLZI3umq',
+
+};
 
 app.use(cors());
 
@@ -14,12 +24,7 @@ app.address = {
   port: process.env.PORT || 3001,
 };
 
-const webhookUrls = {
-  test: 'https://discord.com/api/webhooks/1204584965715787846/HdKedRXuzhslWB74aIGkQHBxbbTiJq7OH8wgsbQVpqjdXW4l7-nZ4hafGPZcKhpz4J2d',
-  development: 'https://discord.com/api/webhooks/1204586195913277511/Gba9znB4Oz3HAAzePktorU9rKpqulkWCdXc09PFaRG_JKFAxfyXWbpAx5tCXJEdYVbbB',
-  staging: 'https://discord.com/api/webhooks/1205526293504991282/bmHh2Ukpq48RduSKZJd2gYT2Tq9Gft6Mq6brtzbyoDT69_9PyggsY3wMeM2ySLZI3umq',
-
-};
+app.db = knex(knexFile[app.env]);
 
 app.logger = winston.createLogger({
   level: 'debug',
@@ -82,10 +87,10 @@ app.get('/', (req, res) => {
 });
 
 app.use(({
-  name, message, keys, stack,
+  name, message, fields, stack,
 }, req, res, next) => {
   try {
-    if (name === 'validationError') res.status(400).json({ messageError: message, keys });
+    if (name === 'validationError') res.status(400).json({ error: message, fields });
     else {
       const id = uuidv4();
       app.logger.error(`${id}:${name}\n${message}\n${stack}`);

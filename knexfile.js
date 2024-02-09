@@ -26,7 +26,7 @@ module.exports = {
       directory: 'src/seeds/',
     },
   },
-  dev: {
+  development: {
     client: 'postgresql',
     connection: process.env.DATABASE_URL || {
       host: '127.0.0.1',
@@ -47,7 +47,7 @@ module.exports = {
       directory: 'src/seeds/',
     },
   },
-  staging: {
+  stage: {
     client: 'postgresql',
     connection: process.env.DATABASE_URL,
     debug: false,
