@@ -2,7 +2,7 @@
 
 module.exports = (app) => {
   /* NO SECURE */
-  app.use('/auths', app.routes.auths);
+  app.use('/auth', app.routes.auth);
 
   /* SECURE */
 
