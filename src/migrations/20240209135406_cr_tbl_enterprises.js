@@ -6,7 +6,7 @@ exports.up = (knex) => knex.schema.createTable('enterprises', (table) => {
   table.increments('id').primary();
   table.string('name', 255);
   table.string('email', 255);
-  table.smallint('nipc', 9);
+  table.integer('nipc', 9);
   table.string('address', 255);
   table.string('cp', 8);
   table.string('locality', 255);

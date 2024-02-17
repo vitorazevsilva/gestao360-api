@@ -14,4 +14,4 @@ exports.up = (knex) => knex.schema.createTable('email_verifications', (table) =>
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-exports.down = (knex) => knex.schema.dropTableIfExists('users_enterprises');
+exports.down = (knex) => knex.schema.dropTableIfExists('email_verifications');
