@@ -1,10 +1,16 @@
 const {
   matches, isEmail, isStrongPassword, isVAT, isPostalCode, isAlpha, isMobilePhone, isURL,
 } = require('validator');
+const bcrypt = require('bcryptjs');
 const { ValidationError } = require('../utils/Errors');
 
+const getPasswdHash = (pwd) => {
+  const salt = bcrypt.genSaltSync(10);
+  return bcrypt.hashSync(pwd, salt);
+};
+
 module.exports = (app) => {
-  const signup = (data) => {
+  const signup = async (data) => {
     const errors = [];
 
     if (!data.personal.name) errors.push({ error: 'O nome é um campo obrigatorio obrigatorio!', field: 'personal.name', value: data.personal.name });
@@ -12,7 +18,7 @@ module.exports = (app) => {
     if (!data.personal.password) errors.push({ error: 'A palavra-passe é um campo obrigatorio obrigatorio!', field: 'personal.name', value: data.personal.password });
     if (!data.enterprise.name) errors.push({ error: 'O nome é um campo obrigatorio obrigatorio!', field: 'enterprise.name', value: data.enterprise.name });
     if (!data.enterprise.email) errors.push({ error: 'O email é um campo obrigatorio obrigatorio!', field: 'enterprise.email', value: data.enterprise.email });
-    if (!data.enterprise.nif) errors.push({ error: 'O NIPC(NIF/VAT) é um campo obrigatorio obrigatorio!', field: 'enterprise.nif', value: data.enterprise.nif });
+    if (!data.enterprise.nipc) errors.push({ error: 'O NIPC(NIF/VAT) é um campo obrigatorio obrigatorio!', field: 'enterprise.nipc', value: data.enterprise.nipc });
     if (!data.enterprise.address) errors.push({ error: 'A morada é um campo obrigatorio obrigatorio!', field: 'enterprise.address', value: data.enterprise.address });
     if (!data.enterprise.cp) errors.push({ error: 'O codigo-postal é um campo obrigatorio obrigatorio!', field: 'enterprise.cp', value: data.enterprise.cp });
     if (!data.enterprise.locality) errors.push({ error: 'A localidade é um campo obrigatorio obrigatorio!', field: 'enterprise.locality', value: data.enterprise.locality });
@@ -22,7 +28,7 @@ module.exports = (app) => {
     if (!matches(data.personal.name, /^([A-ZÀ-Ú][a-zà-ú]+\s)+[A-ZÀ-Ú][a-zà-ú]+$/g)) errors.push({ error: 'O nome inserido é invalido!', field: 'personal.name', value: data.personal.name });
     if (!isEmail(data.personal.email)) errors.push({ error: 'O email inserido é invalido!', field: 'personal.email', value: data.personal.email });
     if (!isEmail(data.enterprise.email)) errors.push({ error: 'O email inserido é invalido!', field: 'enterprise.email', value: data.enterprise.email });
-    if ((!isVAT(data.enterprise.nif, 'PT') && app.env !== 'test') || (app.env === 'test' && !matches(data.enterprise.nif, /^\d{9}/gm))) errors.push({ error: 'O NIPC(NIF/VAT) inserido é invalido', field: 'enterprise.nif', value: data.enterprise.nif });
+    if ((!isVAT(data.enterprise.nipc, 'PT') && app.env !== 'test') || (app.env === 'test' && !matches(data.enterprise.nipc, /^\d{9}/gm))) errors.push({ error: 'O NIPC(NIF/VAT) inserido é invalido', field: 'enterprise.nipc', value: data.enterprise.nipc });
     if (!isPostalCode(data.enterprise.cp, 'PT')) errors.push({ error: 'O codigo-postal inserido é invalido!', field: 'enterprise.cp', value: data.enterprise.cp });
     if (!isAlpha(data.enterprise.locality, 'pt-PT', { ignore: '-s' })) errors.push({ error: 'A localidade inserida é invalida!', field: 'enterprise.locality', value: data.enterprise.locality });
 
@@ -40,6 +46,30 @@ module.exports = (app) => {
     })) throw new ValidationError('A palavra-passe inserida não é suficientemente segura!', 'personal.password');
 
     if (data.personal.password !== data.personal.confirmPassword) throw new ValidationError('As palavras-passe não coincidem!', 'personal.confirmPassword');
+
+    // TODO Create validation email e nif on db
+
+    const personalData = {
+      ...data.personal,
+      password: getPasswdHash(data.personal.password),
+      created_by: data.personal.name,
+      updated_by: data.personal.name,
+    };
+    delete personalData.confirmPassword;
+
+    const personalDB = await app.db('users').insert(personalData, '*');
+    personalData.id = personalDB[0].id;
+
+    const enterpriseData = {
+      ...data.enterprise,
+      owner: personalData.id,
+      created_by: personalData.name,
+      updated_by: personalData.name,
+    };
+
+    const enterpriseDB = await app.db('enterprises').insert(enterpriseData, '*');
+    enterpriseData.id = enterpriseDB[0].id;
+    console.log('%cauth.js line:69 personalData', 'color: #007acc;', enterpriseDB);
   };
   return { signup };
 };

@@ -20,7 +20,7 @@ beforeAll(async () => {
     enterprise: {
       name: fakerPT_PT.company.name(),
       email: fakerPT_PT.internet.email(),
-      nif: fakerPT_PT.helpers.fromRegExp('[1-3|5|6|8|9][0-9]{8}'),
+      nipc: fakerPT_PT.helpers.fromRegExp('[1-3|5|6|8|9][0-9]{8}'),
       address: fakerPT_PT.location.streetAddress(true),
       cp: fakerPT_PT.location.zipCode('####-###'),
       locality: fakerPT_PT.location.city(),
@@ -46,7 +46,7 @@ test('[AUTH][1] - Tentar registar sem preencher os campos obrigatorios', () => {
     enterprise: {
       name: '',
       email: '',
-      nif: '',
+      nipc: '',
       address: '',
       cp: '',
       locality: '',
@@ -68,28 +68,26 @@ test('[AUTH][1] - Tentar registar sem preencher os campos obrigatorios', () => {
 });
 
 test('[AUTH][2] - Tentar registar com campos invalidos', () => {
-  const pwd = fakerPT_PT.internet.password({ length: 12, prefix: '$Ab1' });
   const fakeData = {
+    ...fakeAccountData,
     personal: {
+      ...fakeAccountData.personal,
       name: fakerPT_PT.person.firstName().split('.', 1)[0],
       email: fakerPT_PT.internet.email().split('@')[0],
-      password: pwd,
-      confirmPassword: pwd,
     },
     enterprise: {
-      name: fakerPT_PT.company.name(),
+      ...fakeAccountData.enterprise,
       email: fakerPT_PT.internet.email().split('@')[0],
-      nif: fakerPT_PT.helpers.fromRegExp('[1-3|5|6|8|9][0-9]{7}'),
-      address: fakerPT_PT.location.streetAddress(true),
+      nipc: fakerPT_PT.helpers.fromRegExp('[1-3|5|6|8|9][0-9]{7}'),
       cp: fakerPT_PT.location.zipCode('######'),
       locality: `${fakerPT_PT.location.city()}123`,
-      country: 'Portugal',
       telephone: fakerPT_PT.helpers.fromRegExp('+35120[0-9]{7}'),
       cellphone: fakerPT_PT.helpers.fromRegExp('+35195[0-9]{7}'),
       fax: fakerPT_PT.helpers.fromRegExp('+35120[0-9]{7}'),
       website: `${fakerPT_PT.internet.url()}?test`,
     },
   };
+
   return request(app)
     .post(`${MAIN_ROUTE}/sign-up`)
     .send(fakeData)
@@ -102,26 +100,13 @@ test('[AUTH][2] - Tentar registar com campos invalidos', () => {
 });
 
 test('[AUTH][3] - Tentar registar sem uma palavra-passe segura', () => {
-  const pwd = fakerPT_PT.internet.password({ length: 12 });
+  const pwd = fakerPT_PT.helpers.fromRegExp('[a-z]{8}');
   const fakeData = {
+    ...fakeAccountData,
     personal: {
-      name: fakerPT_PT.person.fullName().split('.', 1)[0],
-      email: fakerPT_PT.internet.email(),
+      ...fakeAccountData.personal,
       password: pwd,
       confirmPassword: pwd,
-    },
-    enterprise: {
-      name: fakerPT_PT.company.name(),
-      email: fakerPT_PT.internet.email(),
-      nif: fakerPT_PT.helpers.fromRegExp('[1-3|5|6|8|9][0-9]{8}'),
-      address: fakerPT_PT.location.streetAddress(true),
-      cp: fakerPT_PT.location.zipCode('####-###'),
-      locality: fakerPT_PT.location.city(),
-      country: 'Portugal',
-      telephone: fakerPT_PT.helpers.fromRegExp('+3512[1-9]{8}'),
-      cellphone: fakerPT_PT.helpers.fromRegExp('+3519[1|2|3|6][0-9]{7}'),
-      fax: fakerPT_PT.helpers.fromRegExp('+3512[1-9]{8}'),
-      website: fakerPT_PT.internet.url(),
     },
   };
   return request(app)
@@ -137,26 +122,14 @@ test('[AUTH][3] - Tentar registar sem uma palavra-passe segura', () => {
 
 test('[AUTH][4] - Tentar registar com uma palavra-passe diferente', () => {
   const fakeData = {
+    ...fakeAccountData,
     personal: {
-      name: fakerPT_PT.person.fullName().split('.', 1)[0],
-      email: fakerPT_PT.internet.email(),
+      ...fakeAccountData.personal,
       password: fakerPT_PT.internet.password({ length: 12, prefix: '$Ab1' }),
       confirmPassword: fakerPT_PT.internet.password({ length: 12, prefix: '$Ab1' }),
     },
-    enterprise: {
-      name: fakerPT_PT.company.name(),
-      email: fakerPT_PT.internet.email(),
-      nif: fakerPT_PT.helpers.fromRegExp('[1-3|5|6|8|9][0-9]{8}'),
-      address: fakerPT_PT.location.streetAddress(true),
-      cp: fakerPT_PT.location.zipCode('####-###'),
-      locality: fakerPT_PT.location.city(),
-      country: 'Portugal',
-      telephone: fakerPT_PT.helpers.fromRegExp('+3512[1-9]{8}'),
-      cellphone: fakerPT_PT.helpers.fromRegExp('+3519[1|2|3|6][0-9]{7}'),
-      fax: fakerPT_PT.helpers.fromRegExp('+3512[1-9]{8}'),
-      website: fakerPT_PT.internet.url(),
-    },
   };
+
   return request(app)
     .post(`${MAIN_ROUTE}/sign-up`)
     .send(fakeData)
