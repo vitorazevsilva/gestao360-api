@@ -47,7 +47,18 @@ module.exports = (app) => {
 
     if (data.personal.password !== data.personal.confirmPassword) throw new ValidationError('As palavras-passe não coincidem!', 'personal.confirmPassword');
 
-    // TODO Create validation email e nif on db
+    let exist;
+
+    exist = await app.db('users').where({ email: data.personal.email }).first(['email']);
+
+    if (exist) throw new ValidationError('Email já registado no sistema!', 'personal.email', data.personal.email);
+
+    exist = await app.db('enterprises').where({ email: data.enterprise.email }).orWhere({ nipc: data.enterprise.nipc }).first(['email', 'nipc']);
+
+    if (exist && exist.email === data.enterprise.email) errors.push({ error: 'Email já registado no sistema!', field: 'enterprise.email', value: data.enterprise.email });
+    if (exist && exist.nipc === data.enterprise.nipc) errors.push({ error: 'NIPC(NIF/VAT) já registada no sistema!', field: 'enterprise.nipc', value: data.enterprise.nipc });
+
+    if (errors.length > 0) throw new ValidationError('Empresa já registada no sistema!', errors);
 
     const personalData = {
       ...data.personal,
