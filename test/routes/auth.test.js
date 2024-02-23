@@ -140,3 +140,40 @@ test('[AUTH][4] - Tentar registar com uma palavra-passe diferente', () => {
       expect(res.body.fields[0]).toHaveProperty('field', 'personal.confirmPassword');
     });
 });
+
+test('[AUTH][5] - Tentar registar com um email pessoal existente no sistema', () => {
+  const fakeData = {
+    ...fakeAccountData,
+  };
+
+  return request(app)
+    .post(`${MAIN_ROUTE}/sign-up`)
+    .send(fakeData)
+    .then((res) => {
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Email já registado no sistema!');
+      expect(res.body).toHaveProperty('fields');
+      expect(res.body.fields[0]).toHaveProperty('field', 'personal.email');
+    });
+});
+
+test('[AUTH][6] - Tentar registar com um empresa já existente no sistema', () => {
+  const fakeData = {
+    ...fakeAccountData,
+    personal: {
+      ...fakeAccountData.personal,
+      email: fakerPT_PT.internet.email(),
+    },
+  };
+
+  return request(app)
+    .post(`${MAIN_ROUTE}/sign-up`)
+    .send(fakeData)
+    .then((res) => {
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Empresa já registada no sistema!');
+      expect(res.body).toHaveProperty('fields');
+      expect(res.body.fields[0]).toHaveProperty('field', 'enterprise.email');
+      expect(res.body.fields[1]).toHaveProperty('field', 'enterprise.nipc');
+    });
+});
