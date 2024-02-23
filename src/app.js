@@ -2,7 +2,7 @@ const app = require('express')();
 const cors = require('cors');
 const consign = require('consign');
 const winston = require('winston');
-const { uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 const DiscordTransport = require('winston-discord-webhook');
 const knex = require('knex');
 
@@ -18,6 +18,8 @@ const webhookUrls = {
 app.use(cors());
 
 app.env = process.env.NODE_ENV || 'production';
+
+app.secret = process.env.MY_SECRET || '8e57747e-a7b3-4719-8e98-fc821fde55fc';
 
 app.address = {
   host: process.env.HOST || '0.0.0.0',
