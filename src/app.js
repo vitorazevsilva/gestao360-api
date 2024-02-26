@@ -66,10 +66,6 @@ app.get('/', (req, res) => {
   });
 });
 
-app.use('/error500', (req, res, next) => {
-  next(new Error('Erro interno do servidor'));
-});
-
 app.use(({
   name, message, fields, stack,
 }, req, res, next) => {
