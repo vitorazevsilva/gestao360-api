@@ -2,14 +2,31 @@
 const nodemailer = require('nodemailer');
 const handlebars = require('handlebars');
 const { promisify } = require('util');
-const fs = require('fs');
+const { readFile } = require('fs');
+const { access } = require('fs').promises;
 const path = require('path');
 const mailerFile = require('../../mailerfile');
 
-const ReadFile = promisify(fs.readFile);
+const ReadFile = promisify(readFile);
 
-module.exports = (app) => {
-  /**
+/**
+ * Verifica se um arquivo existe.
+ * @param {string} filePath - O caminho do arquivo a ser verificado.
+ * @returns {Promise<boolean>} Uma promessa que resolve com true se o arquivo existe e false caso contrário.
+ */
+async function fileExists(filePath) {
+  try {
+    await access(filePath);
+    return true;
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return false; // Arquivo não encontrado
+    }
+    throw error; // Outro erro, lançar novamente
+  }
+}
+
+/**
  * Envia um e-mail com um template HTML.
  * @async
  * @param {Object} options - Opções para enviar o e-mail.
@@ -19,27 +36,37 @@ module.exports = (app) => {
  * @param {string} options.template - O nome do template HTML a ser usado.
  * @param {Object} options.data - Os dados a serem usados para preencher o template.
  * @param {Array<Object>} [options.attachments] - Anexos opcionais a serem enviados com o e-mail.
- * @param {Object} [smtpServer=mailerFile[app.env]] - As configurações do servidor SMTP para enviar o e-mail.
+ * @param {Object} [_smtpServer = mailerFile[process.env.NODE_ENV || 'production']] - As configurações do servidor SMTP para enviar o e-mail.
  * @returns {Promise<Object>} Uma promessa que resolve com informações sobre o envio do e-mail.
- * @throws {Error} Se ocorrer um erro durante o envio do e-mail.
+ * @throws {Error} Se ocorrer um erro durante a preparação ou envio do e-mail.
  */
-  async function sendWithTemplate({
-    from = process.env.MAIL_FROM || 'MEU NOVO AUTO <velma.rohan@ethereal.email>', to, subject, template, data, attachments,
-  }, smtpServer = mailerFile[app.env]) {
-    const ServerTransport = nodemailer.createTransport(smtpServer);
+async function sendWithTemplate({
+  from = process.env.MAIL_FROM || 'Gestão 360 <velma.rohan@ethereal.email>', to, subject, template, data, attachments,
+}, _smtpServer = mailerFile[process.env.NODE_ENV || 'production']) {
+  const Transport = nodemailer.createTransport(_smtpServer);
 
-    const htmlFile = await ReadFile(path.join(__dirname, `../mails/${template}.html`), 'utf8');
-    const htmlTemplate = handlebars.compile(htmlFile);
-    const templateToSend = htmlTemplate(data);
+  Transport.verify((error) => {
+    if (error) throw Error(`A ligação ao servidor de email falhou.\n${error}`);
+  });
 
-    return ServerTransport.sendMail({
-      from,
-      to,
-      subject,
-      html: templateToSend,
-      attachments,
-    }).then((info) => info).catch((error) => new Error(error.message));
+  const templatePath = path.join(__dirname, `../mails/${template}.html`);
+  const templateExists = await fileExists(templatePath);
+  console.log(templatePath);
+  if (!templateExists) {
+    throw new Error(`Template HTML '${template}' não encontrado.`);
   }
 
-  return { sendWithTemplate };
-};
+  const htmlFile = await ReadFile(templatePath, 'utf8');
+  const htmlTemplate = handlebars.compile(htmlFile);
+  const templateToSend = htmlTemplate(data);
+
+  return Transport.sendMail({
+    from,
+    to,
+    subject,
+    html: templateToSend,
+    attachments,
+  }).then((info) => info).catch((error) => new Error(error.message));
+}
+
+module.exports = { sendWithTemplate };
