@@ -3,17 +3,9 @@ const cors = require('cors');
 const consign = require('consign');
 const winston = require('winston');
 const { v4: uuidv4 } = require('uuid');
-const DiscordTransport = require('winston-discord-webhook');
 const knex = require('knex');
 
 const knexFile = require('../knexfile');
-
-const webhookUrls = {
-  test: 'https://discord.com/api/webhooks/1204584965715787846/HdKedRXuzhslWB74aIGkQHBxbbTiJq7OH8wgsbQVpqjdXW4l7-nZ4hafGPZcKhpz4J2d',
-  development: 'https://discord.com/api/webhooks/1204586195913277511/Gba9znB4Oz3HAAzePktorU9rKpqulkWCdXc09PFaRG_JKFAxfyXWbpAx5tCXJEdYVbbB',
-  stage: 'https://discord.com/api/webhooks/1205526293504991282/bmHh2Ukpq48RduSKZJd2gYT2Tq9Gft6Mq6brtzbyoDT69_9PyggsY3wMeM2ySLZI3umq',
-
-};
 
 app.use(cors());
 
@@ -41,20 +33,6 @@ app.logger = winston.createLogger({
         winston.format.timestamp(),
         winston.format.json({ space: 1 }),
       ),
-    }),
-    new DiscordTransport({
-      level: 'error',
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json({ space: 1 }),
-      ),
-      webhook: webhookUrls[app.env],
-      mode: 'hybrid',
-      colors: new Map([
-        ['info', '#32a852'],
-        ['warn', '#f2aa4b'],
-        ['error', '#fa1f14'],
-      ]),
     }),
   ],
 });
@@ -88,6 +66,10 @@ app.get('/', (req, res) => {
   });
 });
 
+app.use('/error500', (req, res, next) => {
+  next(new Error('Erro interno do servidor'));
+});
+
 app.use(({
   name, message, fields, stack,
 }, req, res, next) => {
@@ -96,7 +78,7 @@ app.use(({
     else {
       const id = uuidv4();
       app.logger.error(`${id}:${name}\n${message}\n${stack}`);
-      res.status(500).json({ id, error: 'System Error!' });
+      res.status(500).json({ id, error: `Ocorreu um erro interno no servidor. Por favor, entre em contacto com o suporte técnico e forneça o seguintes id: ${id}` });
     }
   } catch (err) {
     next();
