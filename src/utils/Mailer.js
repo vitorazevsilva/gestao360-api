@@ -51,7 +51,7 @@ async function sendWithTemplate({
 
   const templatePath = path.join(__dirname, `../mails/${template}.html`);
   const templateExists = await fileExists(templatePath);
-  console.log(templatePath);
+
   if (!templateExists) {
     throw new Error(`Template HTML '${template}' não encontrado.`);
   }
