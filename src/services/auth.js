@@ -97,11 +97,15 @@ module.exports = (app) => {
     const verifyId = uuidv5(personalData.email, app.secret);
     await app.db('email_verifications').insert({ uniq_id: verifyId, user_id: personalData.id, code: verifyCode });
     setTimeout(async () => {
+      /* TODO: Alterar verificação com tempo para com um dado de base de dados,
+       para poder adicionar mais tempo. Ignorar no caso de var "test" for true */
+
       const { verified, uniq_id: uniqId } = await app.db('email_verifications').where({ user_id: personalData.id }).first(['verified', 'uniq_id']);
       if (verified === 0) {
         await app.db('email_verifications').where({ uniq_id: uniqId }).delete();
         await app.db('enterprises').where({ id: enterpriseData.id }).delete();
         await app.db('users').where({ id: personalData.id }).delete();
+        // TODO: Enviar email a informar que a conta foi apagada por não ter sido verificada
       }
     }, timeTest ? 1000 : 300000);
     await sendWithTemplate({

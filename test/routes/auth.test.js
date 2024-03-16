@@ -33,9 +33,10 @@ beforeAll(async () => {
   };
   const resAccount = await app.services.auth.signup(fakeAccountData);
   account = { ...resAccount };
+  console.log(account);
 });
 
-test('[AUTH][1] - Tentar registar sem preencher os campos obrigatorios', () => {
+test('[AUTH][1] - Tentar registar sem preencher os campos obrigatórios', () => {
   const fakeData = {
     personal: {
       name: '',
@@ -67,7 +68,7 @@ test('[AUTH][1] - Tentar registar sem preencher os campos obrigatorios', () => {
     });
 });
 
-test('[AUTH][2] - Tentar registar com campos invalidos', () => {
+test('[AUTH][2] - Tentar registar com campos inválidos', () => {
   const fakeData = {
     ...fakeAccountData,
     personal: {
@@ -93,7 +94,7 @@ test('[AUTH][2] - Tentar registar com campos invalidos', () => {
     .send(fakeData)
     .then((res) => {
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Corrija todos os campos invalidos!');
+      expect(res.body.error).toBe('Corrija todos os campos inválidos!');
       expect(res.body).toHaveProperty('fields');
       expect(res.body.fields).toHaveLength(10);
     });
@@ -157,7 +158,7 @@ test('[AUTH][5] - Tentar registar com um email pessoal existente no sistema', ()
     });
 });
 
-test('[AUTH][6] - Tentar registar com um empresa já existente no sistema', () => {
+test('[AUTH][6] - Tentar registar com uma empresa já existente no sistema', () => {
   const fakeData = {
     ...fakeAccountData,
     personal: {
@@ -176,4 +177,55 @@ test('[AUTH][6] - Tentar registar com um empresa já existente no sistema', () =
       expect(res.body.fields[0]).toHaveProperty('field', 'enterprise.email');
       expect(res.body.fields[1]).toHaveProperty('field', 'enterprise.nipc');
     });
+});
+
+test('[AUTH][7] - Criar uma conta corretamente', () => {
+  const fakeData = {
+    ...fakeAccountData,
+    personal: {
+      ...fakeAccountData.personal,
+      email: fakerPT_PT.internet.email(),
+    },
+    enterprise: {
+      ...fakeAccountData.enterprise,
+      email: fakerPT_PT.internet.email(),
+      nipc: fakerPT_PT.helpers.fromRegExp('[1-3|5|6|8|9][0-9]{8}'),
+    },
+  };
+
+  return request(app)
+    .post(`${MAIN_ROUTE}/sign-up`)
+    .send(fakeData)
+    .then((res) => {
+      expect(res.status).toBe(201);
+      expect(res.body.message).toBe('Codigo enviado por email');
+      expect(res.body).toHaveProperty('resendID');
+      expect(res.body.resendID).toHaveLength(36);
+    });
+});
+
+test('[AUTH][8] - Verificação e remoção dos dados não verificados após atraso', async () => {
+  const fakeData = {
+    ...fakeAccountData,
+    personal: {
+      ...fakeAccountData.personal,
+      email: fakerPT_PT.internet.email(),
+    },
+    enterprise: {
+      ...fakeAccountData.enterprise,
+      email: fakerPT_PT.internet.email(),
+      nipc: fakerPT_PT.helpers.fromRegExp('[1-3|5|6|8|9][0-9]{8}'),
+    },
+  };
+
+  const { personal, enterprise, verify } = await app.services.auth.signup(fakeData, true);
+  await new Promise((resolve) => { setTimeout(resolve, 1500); });
+  let exist;
+
+  exist = await app.db('email_verifications').where({ uniq_id: verify.uniq_id }).first();
+  expect(exist).toBeUndefined();
+  exist = await app.db('enterprises').where({ id: enterprise.id }).first();
+  expect(exist).toBeUndefined();
+  exist = await app.db('users').where({ id: personal.id }).first();
+  expect(exist).toBeUndefined();
 });
