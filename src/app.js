@@ -16,6 +16,7 @@ app.secret = process.env.MY_SECRET || '8e57747e-a7b3-4719-8e98-fc821fde55fc';
 app.address = {
   host: process.env.HOST || '0.0.0.0',
   port: process.env.PORT || 3001,
+  dns: process.env.DNS || `http://localhost:${process.env.PORT}`,
 };
 
 app.db = knex(knexFile[app.env]);

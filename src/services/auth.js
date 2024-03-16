@@ -2,15 +2,27 @@ const {
   matches, isEmail, isStrongPassword, isVAT, isPostalCode, isAlpha, isMobilePhone, isURL,
 } = require('validator');
 const bcrypt = require('bcryptjs');
+const getRandomString = require('get-random-string');
+const { v5: uuidv5 } = require('uuid');
 const { ValidationError } = require('../utils/Errors');
+const { sendWithTemplate } = require('../utils/Mailer');
 
 const getPasswdHash = (pwd) => {
   const salt = bcrypt.genSaltSync(10);
   return bcrypt.hashSync(pwd, salt);
 };
 
+const getTempCode = () => getRandomString({
+  size: 6,
+  config: {
+    lower: false,
+    upper: true,
+    number: true,
+    special: false,
+  },
+});
 module.exports = (app) => {
-  const signup = async (data) => {
+  const signup = async (data, timeTest = false) => {
     const errors = [];
 
     if (!data.personal.name) errors.push({ error: 'O nome é um campo obrigatorio obrigatorio!', field: 'personal.name', value: data.personal.name });
@@ -39,7 +51,7 @@ module.exports = (app) => {
       protocols: ['http', 'https'], require_host: true, require_valid_protocol: true, validate_length: true, allow_query_components: false,
     })) errors.push({ error: 'O url do website inserido é invalido!', field: 'enterprise.website', value: data.enterprise.website });
 
-    if (errors.length > 0) throw new ValidationError('Corrija todos os campos invalidos!', errors);
+    if (errors.length > 0) throw new ValidationError('Corrija todos os campos inválidos!', errors);
 
     if (!isStrongPassword(data.personal.password, {
       minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1,
@@ -56,7 +68,7 @@ module.exports = (app) => {
     exist = await app.db('enterprises').where({ email: data.enterprise.email }).orWhere({ nipc: data.enterprise.nipc }).first(['email', 'nipc']);
 
     if (exist && exist.email === data.enterprise.email) errors.push({ error: 'Email já registado no sistema!', field: 'enterprise.email', value: data.enterprise.email });
-    if (exist && exist.nipc === data.enterprise.nipc) errors.push({ error: 'NIPC(NIF/VAT) já registada no sistema!', field: 'enterprise.nipc', value: data.enterprise.nipc });
+    if (exist && exist.nipc.toString() === data.enterprise.nipc) errors.push({ error: 'NIPC(NIF/VAT) já registada no sistema!', field: 'enterprise.nipc', value: data.enterprise.nipc });
 
     if (errors.length > 0) throw new ValidationError('Empresa já registada no sistema!', errors);
 
@@ -80,7 +92,37 @@ module.exports = (app) => {
 
     const enterpriseDB = await app.db('enterprises').insert(enterpriseData, '*');
     enterpriseData.id = enterpriseDB[0].id;
-    console.log('%cauth.js line:69 personalData', 'color: #007acc;', enterpriseDB);
+
+    const verifyCode = getTempCode();
+    const verifyId = uuidv5(personalData.email, app.secret);
+    await app.db('email_verifications').insert({ uniq_id: verifyId, user_id: personalData.id, code: verifyCode });
+    setTimeout(async () => {
+      const { verified, uniq_id: uniqId } = await app.db('email_verifications').where({ user_id: personalData.id }).first(['verified', 'uniq_id']);
+      if (verified === 0) {
+        await app.db('email_verifications').where({ uniq_id: uniqId }).delete();
+        await app.db('enterprises').where({ id: enterpriseData.id }).delete();
+        await app.db('users').where({ id: personalData.id }).delete();
+      }
+    }, timeTest ? 1000 : 300000);
+    await sendWithTemplate({
+      to: personalData.email,
+      subject: 'Código de Verificação para Confirmação de E-mail',
+      template: 'check_email',
+      data: {
+        userName: personalData.name,
+        verifyCode,
+        userEmail: personalData.email,
+        userEnterprise: enterpriseData.name,
+      },
+    });
+    return {
+      personal: { ...personalData },
+      enterprise: { ...enterpriseData },
+      verify: {
+        uniq_id: verifyId,
+        code: verifyCode,
+      },
+    };
   };
   return { signup };
 };
