@@ -14,7 +14,7 @@ app.env = process.env.NODE_ENV || 'production';
 app.secret = process.env.MY_SECRET || '8e57747e-a7b3-4719-8e98-fc821fde55fc';
 
 app.address = {
-  host: process.env.HOST || process.env.RENDER_EXTERNAL_HOSTNAME || '0.0.0.0',
+  host: process.env.HOST || '0.0.0.0',
   port: process.env.PORT || 3001,
   hostname: process.env.HOSTNAME || process.env.RENDER_EXTERNAL_HOSTNAME || `http://localhost:${process.env.PORT}`,
   secure: process.env.SSL || false,
