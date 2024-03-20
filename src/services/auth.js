@@ -4,6 +4,7 @@ const {
 const bcrypt = require('bcryptjs');
 const getRandomString = require('get-random-string');
 const { v5: uuidv5 } = require('uuid');
+const moment = require('moment');
 const { ValidationError } = require('../utils/Errors');
 const { sendWithTemplate } = require('../utils/Mailer');
 
@@ -93,21 +94,36 @@ module.exports = (app) => {
     const enterpriseDB = await app.db('enterprises').insert(enterpriseData, '*');
     enterpriseData.id = enterpriseDB[0].id;
 
+    const timer = timeTest ? 1000 : 300000;
+
     const verifyCode = getTempCode();
     const verifyId = uuidv5(personalData.email, app.secret);
-    await app.db('email_verifications').insert({ uniq_id: verifyId, user_id: personalData.id, code: verifyCode });
-    setTimeout(async () => {
-      /* TODO: Alterar verificação com tempo para com um dado de base de dados,
-       para poder adicionar mais tempo. Ignorar no caso de var "test" for true */
+    const expires = moment().add(timer - 500, 'milliseconds').toDate();
 
-      const { verified, uniq_id: uniqId } = await app.db('email_verifications').where({ user_id: personalData.id }).first(['verified', 'uniq_id']);
-      if (verified === 0) {
+    await app.db('email_verifications').insert({
+      uniq_id: verifyId,
+      user_id: personalData.id,
+      code: verifyCode,
+      expires_at: expires,
+    });
+    setTimeout(async () => {
+      const { verified, uniq_id: uniqId, expires_at: expiresAt } = await app.db('email_verifications').where({ user_id: personalData.id }).first(['verified', 'uniq_id', 'expires_at']);
+      if (verified === 0 && moment(expiresAt).isBefore(moment())) {
         await app.db('email_verifications').where({ uniq_id: uniqId }).delete();
         await app.db('enterprises').where({ id: enterpriseData.id }).delete();
         await app.db('users').where({ id: personalData.id }).delete();
-        // TODO: Enviar email a informar que a conta foi apagada por não ter sido verificada
+        await sendWithTemplate({
+          to: personalData.email,
+          subject: 'Conta Cancelada por Atraso na Verificação',
+          template: 'timeout_email',
+          data: {
+            userName: personalData.name,
+            userEmail: personalData.email,
+            userEnterprise: enterpriseData.name,
+          },
+        });
       }
-    }, timeTest ? 1000 : 300000);
+    }, timer);
     await sendWithTemplate({
       to: personalData.email,
       subject: 'Código de Verificação para Confirmação de E-mail',

@@ -4,9 +4,9 @@
  */
 exports.up = (knex) => knex.schema.alterTable('email_verifications', (table) => {
   table.string('uniq_id', 36);
+  table.timestamp('verified_at');
   table.string('token', 6).alter();
   table.renameColumn('token', 'code');
-  table.renameColumn('expires_at', 'verified_at');
 });
 
 /**
@@ -15,7 +15,7 @@ exports.up = (knex) => knex.schema.alterTable('email_verifications', (table) => 
  */
 exports.down = (knex) => knex.schema.alterTable('email_verifications', (table) => {
   table.dropColumn('uniq_id');
+  table.dropColumn('verified_at');
   table.string('code', 32).alter();
   table.renameColumn('code', 'token');
-  table.renameColumn('verified_at', 'expires_at');
 });
