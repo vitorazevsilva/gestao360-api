@@ -41,7 +41,7 @@ async function fileExists(filePath) {
  * @throws {Error} Se ocorrer um erro durante a preparação ou envio do e-mail.
  */
 async function sendWithTemplate({
-  from = process.env.MAIL_FROM || 'Gestão 360 <velma.rohan@ethereal.email>', to, subject, template, data, attachments,
+  from = process.env.MAIL_FROM, to, subject, template, data, attachments,
 }, _smtpServer = mailerFile[process.env.NODE_ENV || 'production']) {
   const Transport = nodemailer.createTransport(_smtpServer);
 

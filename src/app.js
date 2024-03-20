@@ -1,3 +1,4 @@
+require('dotenv').config();
 const app = require('express')();
 const cors = require('cors');
 const consign = require('consign');
@@ -10,13 +11,14 @@ const knexFile = require('../knexfile');
 app.use(cors());
 
 app.env = process.env.NODE_ENV || 'production';
-
-app.secret = process.env.MY_SECRET || '8e57747e-a7b3-4719-8e98-fc821fde55fc';
+if (!process.env.MY_SECRET) throw new Error('Env. MY_SECRET is required');
+if (!process.env.MAIL_FROM) throw new Error('Env. MAIL_FROM is required');
+app.secret = process.env.MY_SECRET;
 
 app.address = {
   host: process.env.HOST || '0.0.0.0',
   port: process.env.PORT || 3001,
-  hostname: process.env.HOSTNAME || process.env.RENDER_EXTERNAL_HOSTNAME || `http://localhost:${process.env.PORT}`,
+  hostname: process.env.HOSTNAME || `http://localhost:${process.env.PORT}`,
   secure: process.env.SSL || false,
 };
 
