@@ -14,9 +14,10 @@ app.env = process.env.NODE_ENV || 'production';
 app.secret = process.env.MY_SECRET || '8e57747e-a7b3-4719-8e98-fc821fde55fc';
 
 app.address = {
-  host: process.env.HOST || '0.0.0.0',
+  host: process.env.HOST || process.env.RENDER_EXTERNAL_HOSTNAME || '0.0.0.0',
   port: process.env.PORT || 3001,
-  dns: process.env.DNS || `http://localhost:${process.env.PORT}`,
+  hostname: process.env.HOSTNAME || process.env.RENDER_EXTERNAL_HOSTNAME || `http://localhost:${process.env.PORT}`,
+  secure: process.env.SSL || false,
 };
 
 app.db = knex(knexFile[app.env]);
@@ -50,10 +51,11 @@ app.get('/', (req, res) => {
   res.status(200).json({
     message: 'Welcome to Gestão 360',
     server_info: {
+      hostname: app.address.hostname,
       host: app.address.host,
       port: app.address.port,
+      secure: app.address.secure,
       environment: app.env,
-      secure: false,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       time_now: `${String(date.getFullYear())}-${String(
         date.getMonth() + 1,
@@ -63,6 +65,7 @@ app.get('/', (req, res) => {
         2,
         '0',
       )}:${String(date.getSeconds()).padStart(2, '0')}`,
+      commit: process.env.RENDER_GIT_COMMIT || undefined,
     },
   });
 });

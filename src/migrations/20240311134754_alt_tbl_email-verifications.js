@@ -3,7 +3,7 @@
  * @returns { Promise<void> }
  */
 exports.up = (knex) => knex.schema.alterTable('email_verifications', (table) => {
-  table.string('uniq_id', 36);
+  table.string('uniq_id', 36).unique();
   table.timestamp('verified_at');
   table.string('token', 6).alter();
   table.renameColumn('token', 'code');
