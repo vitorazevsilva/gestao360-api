@@ -2,23 +2,24 @@ const app = require('express')();
 const cors = require('cors');
 const consign = require('consign');
 const winston = require('winston');
-const { uuidv4 } = require('uuid');
-const DiscordTransport = require('winston-discord-webhook');
+const { v4: uuidv4 } = require('uuid');
+const knex = require('knex');
+
+const knexFile = require('../knexfile');
 
 app.use(cors());
 
 app.env = process.env.NODE_ENV || 'production';
 
+app.secret = process.env.MY_SECRET || '8e57747e-a7b3-4719-8e98-fc821fde55fc';
+
 app.address = {
   host: process.env.HOST || '0.0.0.0',
   port: process.env.PORT || 3001,
+  dns: process.env.DNS || `http://localhost:${process.env.PORT}`,
 };
 
-const webhookUrls = {
-  test: 'https://discord.com/api/webhooks/1204584965715787846/HdKedRXuzhslWB74aIGkQHBxbbTiJq7OH8wgsbQVpqjdXW4l7-nZ4hafGPZcKhpz4J2d',
-  development: 'https://discord.com/api/webhooks/1204586195913277511/Gba9znB4Oz3HAAzePktorU9rKpqulkWCdXc09PFaRG_JKFAxfyXWbpAx5tCXJEdYVbbB',
-  // Adicione outros ambientes conforme necessário
-};
+app.db = knex(knexFile[app.env]);
 
 app.logger = winston.createLogger({
   level: 'debug',
@@ -34,24 +35,14 @@ app.logger = winston.createLogger({
         winston.format.json({ space: 1 }),
       ),
     }),
-    new DiscordTransport({
-      level: 'error',
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json({ space: 1 }),
-      ),
-      webhook: webhookUrls[app.env],
-      mode: 'hybrid',
-      colors: new Map([
-        ['info', '#32a852'],
-        ['warn', '#f2aa4b'],
-        ['error', '#fa1f14'],
-      ]),
-    }),
   ],
 });
 
 consign({ cwd: 'src', verbose: false })
+  .include('./config/middlewares.js')
+  .include('./services')
+  .include('./routes')
+  .include('./config/router.js')
   .into(app);
 
 app.get('/', (req, res) => {
@@ -76,13 +67,15 @@ app.get('/', (req, res) => {
   });
 });
 
-app.use(({ name, message, stack }, req, res, next) => {
+app.use(({
+  name, message, fields, stack,
+}, req, res, next) => {
   try {
-    if (name === 'validationError') res.status(400).json({ error: message });
+    if (name === 'validationError') res.status(400).json({ error: message, fields });
     else {
       const id = uuidv4();
       app.logger.error(`${id}:${name}\n${message}\n${stack}`);
-      res.status(500).json({ id, error: 'System Error!' });
+      res.status(500).json({ id, error: `Ocorreu um erro interno no servidor. Por favor, entre em contacto com o suporte técnico e forneça o seguintes id: ${id}` });
     }
   } catch (err) {
     next();

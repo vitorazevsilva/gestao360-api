@@ -2,7 +2,7 @@
   "name": "gestao360-api",
   "version": "1.0.0",
   "description": "API for Gestão 360",
-  "main": "app/server.js",
+  "main": "src/server.js",
   "type": "commonjs",
   "repository": "git@github.com:vitorazevsilva/gestao360-api.git",
   "author": {
@@ -14,15 +14,7 @@
     "start": "node app/server.js",
     "test": "NODE_ENV=test jest --coverage --runInBand --forceExit",
     "secure-mode": "NODE_ENV=test jest --watchAll --verbose=true",
-    "lint": "eslint app/**/* test/**",
-    "db": "docker compose up -d",
-    "db:sudo": "sudo docker compose up -d",
-    "db:stop:sudo": "docker compose stop",
-    "knex_m:make": "knex migrate:make",
-    "knex_m:run": "knex migrate:latest",
-    "knex_m:back": "knex migrate:rollback",
-    "knex_s:make": "knex seed:make",
-    "knex_s:run": "knex seed:run"
+    "lint": "eslint 'src/**/*.js' 'test/**/*.js'"
   },
   "directories": {
     "test": "test",
@@ -59,6 +51,7 @@
   "license": "MIT",
   "private": true,
   "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
     "eslint": "^7.32.0 || ^8.2.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.25.2",
@@ -67,11 +60,19 @@
     "supertest": "^6.3.4"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
     "consign": "^0.1.6",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "get-random-string": "^1.0.9",
+    "handlebars": "^4.7.8",
+    "knex": "^3.1.0",
+    "moment": "^2.30.1",
+    "nodemailer": "^6.9.10",
+    "pg": "^8.11.3",
     "uuid": "^9.0.1",
-    "winston": "^3.11.0",
-    "winston-discord-webhook": "^2.0.0"
+    "validator": "^13.11.0",
+    "winston": "^3.11.0"
   }
 }
