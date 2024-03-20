@@ -43,7 +43,10 @@
       ".gitignore",
       "package.json",
       "yarn.lock"
-    ]
+    ],
+    "env": {
+      "NODE_ENV": "development"
+    }
   },
   "license": "MIT",
   "private": true,

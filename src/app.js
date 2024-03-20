@@ -5,6 +5,7 @@ const consign = require('consign');
 const winston = require('winston');
 const { v4: uuidv4 } = require('uuid');
 const knex = require('knex');
+const moment = require('moment');
 
 const knexFile = require('../knexfile');
 
@@ -19,7 +20,7 @@ app.address = {
   host: process.env.HOST || '0.0.0.0',
   port: process.env.PORT || 3001,
   hostname: process.env.HOSTNAME || `http://localhost:${process.env.PORT}`,
-  secure: process.env.SSL || false,
+  secure: process.env.SSL === 'true',
 };
 
 app.db = knex(knexFile[app.env]);
@@ -49,7 +50,6 @@ consign({ cwd: 'src', verbose: false })
   .into(app);
 
 app.get('/', (req, res) => {
-  const date = new Date();
   res.status(200).json({
     message: 'Welcome to Gestão 360',
     server_info: {
@@ -59,14 +59,7 @@ app.get('/', (req, res) => {
       secure: app.address.secure,
       environment: app.env,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      time_now: `${String(date.getFullYear())}-${String(
-        date.getMonth() + 1,
-      ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(
-        date.getHours(),
-      ).padStart(2, '0')}:${String(date.getMinutes()).padStart(
-        2,
-        '0',
-      )}:${String(date.getSeconds()).padStart(2, '0')}`,
+      time_now: moment().format(),
       commit: process.env.RENDER_GIT_COMMIT || undefined,
     },
   });
