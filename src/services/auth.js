@@ -3,7 +3,7 @@ const {
 } = require('validator');
 const bcrypt = require('bcryptjs');
 const getRandomString = require('get-random-string');
-const { v5: uuidv5 } = require('uuid');
+const { v5: uuidv5, validate: uuidVal } = require('uuid');
 const moment = require('moment');
 const { ValidationError } = require('../utils/Errors');
 const { sendWithTemplate } = require('../utils/Mailer');
@@ -94,7 +94,7 @@ module.exports = (app) => {
     const enterpriseDB = await app.db('enterprises').insert(enterpriseData, '*');
     enterpriseData.id = enterpriseDB[0].id;
 
-    const timer = timeTest ? 1000 : 300000;
+    const timer = timeTest ? 1500 : 300000;
 
     const verifyCode = getTempCode();
     const verifyId = uuidv5(personalData.email, app.secret);
@@ -106,7 +106,7 @@ module.exports = (app) => {
       code: verifyCode,
       expires_at: expires,
     });
-    setTimeout(async () => {
+    const interval = setInterval(async () => {
       const { verified, uniq_id: uniqId, expires_at: expiresAt } = await app.db('email_verifications').where({ user_id: personalData.id }).first(['verified', 'uniq_id', 'expires_at']);
       if (verified === 0 && moment(expiresAt).isBefore(moment())) {
         await app.db('email_verifications').where({ uniq_id: uniqId }).delete();
@@ -122,6 +122,10 @@ module.exports = (app) => {
             userEnterprise: enterpriseData.name,
           },
         });
+
+        clearInterval(interval);
+      } else if (verified === 1) {
+        clearInterval(interval);
       }
     }, timer);
     await sendWithTemplate({
@@ -141,8 +145,45 @@ module.exports = (app) => {
       verify: {
         uniq_id: verifyId,
         code: verifyCode,
+        expires_at: expires,
       },
     };
   };
-  return { signup };
+
+  const resend = async (uniqId) => {
+    if (!uniqId || !uuidVal(uniqId)) throw new ValidationError('ID Unico tem um formato Invalido!', 'uniq_id', uniqId);
+
+    const info = await app.db('email_verifications')
+      .join('users', 'email_verifications.user_id', '=', 'users.id')
+      .join('enterprises', 'users.id', '=', 'enterprises.owner')
+      .select('email_verifications.*', 'users.email as user_email', 'users.name as user_name', 'enterprises.name as enterprise_name')
+      .where({ 'email_verifications.uniq_id': uniqId })
+      .first();
+
+    if (!info) throw new ValidationError('ID Unico Desconhecido!', 'uniq_id', uniqId);
+
+    const expires = moment().add(5, 'minutes').toDate();
+
+    await app.db('email_verifications').where({ uniq_id: uniqId }).update({
+      expires_at: expires,
+    });
+
+    await sendWithTemplate({
+      to: info.email,
+      subject: 'Código de Verificação para Confirmação de E-mail',
+      template: 'check_email',
+      data: {
+        userName: info.name,
+        verifyCode: info.code,
+        userEmail: info.email,
+        userEnterprise: info.name,
+      },
+    });
+    return {
+      uniq_id: uniqId,
+      code: info.code,
+      expires_at: expires,
+    };
+  };
+  return { signup, resend };
 };

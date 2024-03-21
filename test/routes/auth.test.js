@@ -36,7 +36,7 @@ beforeAll(async () => {
   console.log(account);
 });
 
-test('[AUTH][1] - Tentar registar sem preencher os campos obrigatórios', () => {
+test('[AUTH][SIGN-UP][1] - Tentar registar sem preencher os campos obrigatórios', () => {
   const fakeData = {
     personal: {
       name: '',
@@ -68,7 +68,7 @@ test('[AUTH][1] - Tentar registar sem preencher os campos obrigatórios', () => 
     });
 });
 
-test('[AUTH][2] - Tentar registar com campos inválidos', () => {
+test('[AUTH][SIGN-UP][2] - Tentar registar com campos inválidos', () => {
   const fakeData = {
     ...fakeAccountData,
     personal: {
@@ -100,7 +100,7 @@ test('[AUTH][2] - Tentar registar com campos inválidos', () => {
     });
 });
 
-test('[AUTH][3] - Tentar registar sem uma palavra-passe segura', () => {
+test('[AUTH][SIGN-UP][3] - Tentar registar sem uma palavra-passe segura', () => {
   const pwd = fakerPT_PT.helpers.fromRegExp('[a-z]{8}');
   const fakeData = {
     ...fakeAccountData,
@@ -121,7 +121,7 @@ test('[AUTH][3] - Tentar registar sem uma palavra-passe segura', () => {
     });
 });
 
-test('[AUTH][4] - Tentar registar com uma palavra-passe diferente', () => {
+test('[AUTH][SIGN-UP][4] - Tentar registar com uma palavra-passe diferente', () => {
   const fakeData = {
     ...fakeAccountData,
     personal: {
@@ -142,7 +142,7 @@ test('[AUTH][4] - Tentar registar com uma palavra-passe diferente', () => {
     });
 });
 
-test('[AUTH][5] - Tentar registar com um email pessoal existente no sistema', () => {
+test('[AUTH][SIGN-UP][5] - Tentar registar com um email pessoal existente no sistema', () => {
   const fakeData = {
     ...fakeAccountData,
   };
@@ -158,7 +158,7 @@ test('[AUTH][5] - Tentar registar com um email pessoal existente no sistema', ()
     });
 });
 
-test('[AUTH][6] - Tentar registar com uma empresa já existente no sistema', () => {
+test('[AUTH][SIGN-UP][6] - Tentar registar com uma empresa já existente no sistema', () => {
   const fakeData = {
     ...fakeAccountData,
     personal: {
@@ -179,7 +179,7 @@ test('[AUTH][6] - Tentar registar com uma empresa já existente no sistema', () 
     });
 });
 
-test('[AUTH][7] - Criar uma conta corretamente', () => {
+test('[AUTH][SIGN-UP][7] - Criar uma conta corretamente', () => {
   const fakeData = {
     ...fakeAccountData,
     personal: {
@@ -204,7 +204,7 @@ test('[AUTH][7] - Criar uma conta corretamente', () => {
     });
 });
 
-test('[AUTH][8] - Verificação e remoção dos dados não verificados após atraso', async () => {
+test('[AUTH][SIGN-UP][8] - Verificação e remoção dos dados não verificados após atraso', async () => {
   const fakeData = {
     ...fakeAccountData,
     personal: {
@@ -229,3 +229,45 @@ test('[AUTH][8] - Verificação e remoção dos dados não verificados após atr
   exist = await app.db('users').where({ id: personal.id }).first();
   expect(exist).toBeUndefined();
 });
+
+test('[AUTH][RESEND][9] - Pedir reenvio sem o id unico', () => request(app)
+  .post(`${MAIN_ROUTE}/resend`)
+  .send({})
+  .then((res) => {
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('ID Unico tem um formato Invalido!');
+    expect(res.body).toHaveProperty('fields');
+    expect(res.body.fields[0]).toHaveProperty('field', 'uniq_id');
+  }));
+
+test('[AUTH][RESEND][10] - Pedir reenvio com um id unico invalido', () => request(app)
+  .post(`${MAIN_ROUTE}/resend`)
+  .send({ uniq_id: 'idunico' })
+  .then((res) => {
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('ID Unico tem um formato Invalido!');
+    expect(res.body).toHaveProperty('fields');
+    expect(res.body.fields[0]).toHaveProperty('field', 'uniq_id');
+    expect(res.body.fields[0]).toHaveProperty('value', 'idunico');
+  }));
+
+test('[AUTH][RESEND][11] - Pedir reenvio com um id unico desconhecido', () => request(app)
+  .post(`${MAIN_ROUTE}/resend`)
+  .send({ uniq_id: '0b418f73-2b5f-49e9-bcad-3adb18ef71e5' })
+  .then((res) => {
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('ID Unico Desconhecido!');
+    expect(res.body).toHaveProperty('fields');
+    expect(res.body.fields[0]).toHaveProperty('field', 'uniq_id');
+    expect(res.body.fields[0]).toHaveProperty('value', '0b418f73-2b5f-49e9-bcad-3adb18ef71e5');
+  }));
+
+test('[AUTH][RESEND][12] - Pedir reenvio com um id unico correto', () => request(app)
+  .post(`${MAIN_ROUTE}/resend`)
+  .send({ uniq_id: account.verify.uniq_id })
+  .then(async (res) => {
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Codigo reenviado por email');
+    expect(res.body).toHaveProperty('resendID');
+    expect(res.body.resendID).toHaveLength(36);
+  }));

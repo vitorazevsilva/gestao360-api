@@ -7,5 +7,11 @@ module.exports = (app) => {
       .catch((error) => next(error));
   });
 
+  router.post('/resend', (req, res, next) => {
+    app.services.auth.resend(req.body.uniq_id)
+      .then((rslt) => res.status(200).json({ message: 'Codigo reenviado por email', resendID: rslt.uniq_id }))
+      .catch((error) => next(error));
+  });
+
   return router;
 };

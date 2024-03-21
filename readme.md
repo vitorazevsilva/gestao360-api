@@ -1,6 +1,6 @@
 
 # Gestão 360 - API
-
+[![wakatime](https://wakatime.com/badge/github/vitorazevsilva/gestao360-api.svg)](https://wakatime.com/badge/github/vitorazevsilva/gestao360-api)
 
 
 ## Variáveis de Ambiente
