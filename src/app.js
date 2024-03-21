@@ -73,7 +73,7 @@ app.use(({
     else {
       const id = uuidv4();
       app.logger.error(`${id}:${name}\n${message}\n${stack}`);
-      res.status(500).json({ id, error: `Ocorreu um erro interno no servidor. Por favor, entre em contacto com o suporte técnico e forneça o seguintes id: ${id}` });
+      res.status(500).json({ id, error: `Ocorreu um erro interno no servidor. Por favor, entre em contacto com o suporte técnico e forneça o seguinte id: ${id}` });
     }
   } catch (err) {
     next();

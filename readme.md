@@ -9,13 +9,14 @@ Para rodar esse projeto, você vai precisar adicionar as seguintes variáveis de
 
 | Variavel| Obrigatorio | Opções/Exemplo | Default |
 | ------- | ----------- | ------ | ------- |
-| NODE_ENV | Não | `test`, `development`, `stage`, `production` | `production` |
-| HOST | Não |  | `0.0.0.0` |
-| PORT | Não |  | `3001` |
-| SSL | Não | `true`, `false` | `false` |
-| HOSTNAME | Não |  | `http://localhost:${process.env.PORT}` |
-| MY_SECRET | Sim | 8e57747e-a7b3-4719-8e98-fc821fde55fc (uuid)|  |
-| MAIL_FROM | Sim | Gestão 360 <velma.rohan@ethereal.email> |  |
-| DATABASE_URL | Não |  |  |
-
+| MY_SECRET | Sim | `8e57747e-a7b3-4719-8e98-fc821fde55fc` (Exp) (uuid obrigatorio)|  |
+| MAIL_FROM | Sim | `Gestão 360 <velma.rohan@ethereal.email>` (Exp) |  |
+| NODE_ENV | Não | `test`, `development`, `stage`, `production` (Opç) | `production` |
+| HOST | Não | `192.168.1.1`, `127.0.0.1`, `0.0.0.0` (Exp) | `0.0.0.0` |
+| PORT | Não | `3001` (Exp) | `3001` |
+| SSL | Não | `true`, `false` (Opç) | `false` |
+| HOSTNAME | Não | `http://localhost` (Exp) | `http://localhost:${process.env.PORT}` |
+| DATABASE_URL | Não |  | Array in knexfile.js |
+| RATE_MS | Não | `900000` (15 Min), `1800000` (30 Min), `3600000` (1 Hora) (Exp)  | `1800000` (30 Min) |
+| RATE_LIMIT | Não | `50`, `100`, `200` (Exp)| `100` |
 
