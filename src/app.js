@@ -14,6 +14,10 @@ app.use(cors());
 app.env = process.env.NODE_ENV || 'production';
 if (!process.env.MY_SECRET) throw new Error('Env. MY_SECRET is required');
 if (!process.env.MAIL_FROM) throw new Error('Env. MAIL_FROM is required');
+if (!process.env.SMTP_USER) throw new Error('Env. SMTP_USER is required');
+if (!process.env.SMTP_PWD) throw new Error('Env. SMTP_PWD is required');
+if (!process.env.SMTP_HOST) throw new Error('Env. SMTP_HOST is required');
+
 app.secret = process.env.MY_SECRET;
 
 app.address = {

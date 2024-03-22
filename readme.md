@@ -18,5 +18,12 @@ Para rodar esse projeto, você vai precisar adicionar as seguintes variáveis de
 | HOSTNAME | Não | `http://localhost` (Exp) | `http://localhost:${process.env.PORT}` |
 | DATABASE_URL | Não |  | Array in knexfile.js |
 | RATE_MS | Não | `900000` (15 Min), `1800000` (30 Min), `3600000` (1 Hora) (Exp)  | `1800000` (30 Min) |
-| RATE_LIMIT | Não | `50`, `100`, `200` (Exp)| `100` |
+| RATE_LIMIT | Não | `50`, `100`, `200` (Exp) | `100` |
+| SMTP_USER | Sim | `alguem@exemplo.com` (Exp)| |
+| SMTP_PWD | Sim | |  |
+| SMTP_HOST | Sim | `smtp.ethereal.email` (Exp) |  |
+| SMTP_PORT | Não | `465`, `587` (Exp)| `465` |
+| SMTP_POOL | Não | `true`, `false` (Opç) | `100` |
+| SMTP_TLS | Não |  `true`, `false` (Opç) | `true` |
+
 
